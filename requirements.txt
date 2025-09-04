@@ -1,0 +1,6 @@
+Flask==2.3.3
+psycopg2-binary==2.9.7
+prometheus-client==0.17.1
+pytest==7.4.2
+pytest-flask==1.2.0
+requests==2.31.0
