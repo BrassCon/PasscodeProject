@@ -1,7 +1,15 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # PasscodeProject
 Project with website based on python and DevOps tools.
 =======
+=======
+=======
+# PasscodeProject
+Project with website based on python and DevOps tools.
+=======
+>>>>>>> ae49d8d (Add CI pipeline)
+>>>>>>> 77443fc (Add CI pipeline)
 # Passcode Portal Web App
 
 A minimal Python Flask web application that retrieves messages from PostgreSQL based on passcode input.
@@ -253,4 +261,10 @@ app.post('/', async (req, res) => {
 ## License
 
 MIT License - feel free to use this code for your projects!
+<<<<<<< HEAD
 >>>>>>> a572fec (Initial commit)
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> ae49d8d (Add CI pipeline)
+>>>>>>> 77443fc (Add CI pipeline)
