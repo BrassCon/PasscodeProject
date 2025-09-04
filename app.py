@@ -56,11 +56,12 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
+
 def get_db_connection():
     """Get database connection with retry logic"""
     max_retries = 5
     retry_delay = 1
-    
+
     for attempt in range(max_retries):
         try:
             conn = psycopg2.connect(**DB_CONFIG)
@@ -73,31 +74,34 @@ def get_db_connection():
             else:
                 raise
 
+
 def verify_passcode_and_get_message(passcode):
     """Verify passcode against database and return message"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         # Query to find message by passcode
         cursor.execute("SELECT message FROM messages WHERE passcode = %s", (passcode,))
         result = cursor.fetchone()
-        
+
         cursor.close()
         conn.close()
-        
+
         if result:
             return result[0]  # Return the message
         else:
             return None
-            
+
     except Exception as e:
         print(f"Database error: {e}")
         return None
 
+
 @app.before_request
 def before_request():
     request.start_time = time.time()
+
 
 @app.after_request
 def after_request(response):
@@ -105,28 +109,30 @@ def after_request(response):
     request_duration.observe(time.time() - request.start_time)
     return response
 
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     message = None
     message_type = None
-    
+
     if request.method == 'POST':
         passcode = request.form.get('passcode')
-        
+
         if not passcode:
             message = "Please enter a passcode"
             message_type = "error"
         else:
             db_message = verify_passcode_and_get_message(passcode)
-            
+
             if db_message:
                 message = db_message
                 message_type = "success"
             else:
                 message = "Invalid passcode. Please try again."
                 message_type = "error"
-    
+
     return render_template_string(HTML_TEMPLATE, message=message, message_type=message_type)
+
 
 @app.route('/health')
 def health():
@@ -141,12 +147,15 @@ def health():
     except Exception as e:
         return jsonify({"status": "unhealthy", "database": "disconnected", "error": str(e)}), 503
 
+
 @app.route('/metrics')
 def metrics():
     """Prometheus metrics endpoint"""
     return generate_latest()
 
+
 if __name__ == '__main__':
     print("Starting Flask application...")
     print(f"Database config: {DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}")
     app.run(host='0.0.0.0', port=5000, debug=True)
+

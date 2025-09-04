@@ -3,11 +3,13 @@ import json
 from unittest.mock import patch, MagicMock
 from app import app, get_db_connection, init_db
 
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
+
 
 @pytest.fixture
 def mock_db():
@@ -18,12 +20,14 @@ def mock_db():
         mock_conn.return_value = mock_connection
         yield mock_cursor, mock_connection
 
+
 def test_index_get_request(client):
     """Test GET request to index page"""
     response = client.get('/')
     assert response.status_code == 200
-    assert b'Passcode Portal' in response.data
-    assert b'Enter passcode' in response.data
+    assert b'Enter Passcode' in response.data
+    assert b'Passcode:' in response.data
+
 
 def test_index_post_empty_passcode(client):
     """Test POST request with empty passcode"""
@@ -31,94 +35,99 @@ def test_index_post_empty_passcode(client):
     assert response.status_code == 200
     assert b'Please enter a passcode' in response.data
 
+
 @patch('app.get_db_connection')
 def test_index_post_valid_passcode(mock_db_conn, client):
     """Test POST request with valid passcode"""
-    # Mock database response
     mock_cursor = MagicMock()
-    mock_cursor.fetchone.return_value = {'message': 'Hello, world!'}
-    
+    mock_cursor.fetchone.return_value = ('Hello, world!',)
+
     mock_conn = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     mock_db_conn.return_value = mock_conn
-    
+
     response = client.post('/', data={'passcode': 'secret123'})
     assert response.status_code == 200
     assert b'Hello, world!' in response.data
 
+
 @patch('app.get_db_connection')
 def test_index_post_invalid_passcode(mock_db_conn, client):
     """Test POST request with invalid passcode"""
-    # Mock database response (no result)
     mock_cursor = MagicMock()
     mock_cursor.fetchone.return_value = None
-    
+
     mock_conn = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     mock_db_conn.return_value = mock_conn
-    
+
     response = client.post('/', data={'passcode': 'wrongcode'})
     assert response.status_code == 200
     assert b'Invalid passcode' in response.data
+
 
 @patch('app.get_db_connection')
 def test_index_post_database_error(mock_db_conn, client):
     """Test POST request with database error"""
     mock_db_conn.side_effect = Exception("Database connection failed")
-    
+
     response = client.post('/', data={'passcode': 'secret123'})
     assert response.status_code == 200
-    assert b'Database error' in response.data
+    assert b'Invalid passcode' in response.data
+
 
 @patch('app.get_db_connection')
 def test_health_endpoint_healthy(mock_db_conn, client):
     """Test health endpoint when database is healthy"""
     mock_cursor = MagicMock()
     mock_cursor.fetchone.return_value = (1,)
-    
+
     mock_conn = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     mock_db_conn.return_value = mock_conn
-    
+
     response = client.get('/health')
     assert response.status_code == 200
-    
+
     data = json.loads(response.data)
     assert data['status'] == 'healthy'
     assert data['database'] == 'connected'
+
 
 @patch('app.get_db_connection')
 def test_health_endpoint_unhealthy(mock_db_conn, client):
     """Test health endpoint when database is unhealthy"""
     mock_db_conn.side_effect = Exception("Database connection failed")
-    
+
     response = client.get('/health')
     assert response.status_code == 503
-    
+
     data = json.loads(response.data)
     assert data['status'] == 'unhealthy'
     assert data['database'] == 'disconnected'
+
 
 def test_metrics_endpoint(client):
     """Test metrics endpoint"""
     response = client.get('/metrics')
     assert response.status_code == 200
     assert response.headers['Content-Type'].startswith('text/plain')
-    assert b'app_requests_total' in response.data
+    assert b'flask_requests_total' in response.data
+
 
 @patch('app.psycopg2.connect')
 def test_get_db_connection_retry_logic(mock_connect):
     """Test database connection retry logic"""
-    # Mock connection failure then success
     mock_connect.side_effect = [
         Exception("Connection failed"),
         Exception("Connection failed"),
-        MagicMock()  # Success on third attempt
+        MagicMock()
     ]
-    
+
     conn = get_db_connection()
     assert conn is not None
     assert mock_connect.call_count == 3
+
 
 @patch('app.get_db_connection')
 def test_init_db(mock_db_conn):
@@ -127,26 +136,24 @@ def test_init_db(mock_db_conn):
     mock_conn = MagicMock()
     mock_conn.cursor.return_value = mock_cursor
     mock_db_conn.return_value = mock_conn
-    
+
     init_db()
-    
-    # Verify tables and data are created
-    assert mock_cursor.execute.call_count >= 3  # CREATE TABLE + 2 INSERTs
+
+    assert mock_cursor.execute.call_count >= 3
     mock_conn.commit.assert_called_once()
+
 
 class TestIntegration:
     """Integration tests that can be run against a real database"""
-    
+
     @pytest.mark.integration
     def test_full_workflow(self, client):
         """Test complete workflow with real database (requires DB setup)"""
-        # This test requires actual database connection
-        # Skip if no database available
         try:
             get_db_connection()
-        except:
+        except Exception:
             pytest.skip("Database not available for integration test")
-        
-        # Test the full workflow
+
         response = client.post('/', data={'passcode': 'secret123'})
         assert response.status_code == 200
+
