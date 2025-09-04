@@ -74,6 +74,7 @@ def get_db_connection():
             else:
                 raise
 
+
 def init_db():
     conn = get_db_connection()
     with conn:
