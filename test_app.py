@@ -156,4 +156,3 @@ class TestIntegration:
 
         response = client.post('/', data={'passcode': 'secret123'})
         assert response.status_code == 200
-

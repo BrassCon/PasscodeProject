@@ -158,4 +158,3 @@ if __name__ == '__main__':
     print("Starting Flask application...")
     print(f"Database config: {DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}")
     app.run(host='0.0.0.0', port=5000, debug=True)
-
