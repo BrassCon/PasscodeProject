@@ -74,6 +74,18 @@ def get_db_connection():
             else:
                 raise
 
+def init_db():
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id SERIAL PRIMARY KEY,
+                    content TEXT NOT NULL
+                )
+            """)
+    conn.close()
+
 
 def verify_passcode_and_get_message(passcode):
     """Verify passcode against database and return message"""
